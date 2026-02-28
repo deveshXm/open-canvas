@@ -57,6 +57,7 @@ export interface TextRendererProps {
   isEditing: boolean;
   isHovering: boolean;
   isInputVisible: boolean;
+  activeFileIndex: number;
 }
 
 export function TextRendererComponent(props: TextRendererProps) {
@@ -139,11 +140,19 @@ export function TextRendererComponent(props: TextRendererProps) {
       ) as ArtifactMarkdownV3 | undefined;
       if (!currentContent) return;
 
+      // For multi-file artifacts, use the active file's content
+      const isMultiFile =
+        !!currentContent.files && currentContent.files.length > 0;
+      const displayMarkdown = isMultiFile
+        ? currentContent.files![
+            Math.min(props.activeFileIndex, currentContent.files!.length - 1)
+          ].content
+        : currentContent.fullMarkdown;
+
       // Blocks are not found in the artifact, so once streaming is done we should update the artifact state with the blocks
       (async () => {
-        const markdownAsBlocks = await editor.tryParseMarkdownToBlocks(
-          currentContent.fullMarkdown
-        );
+        const markdownAsBlocks =
+          await editor.tryParseMarkdownToBlocks(displayMarkdown);
         editor.replaceBlocks(editor.document, markdownAsBlocks);
         setUpdateRenderedArtifactRequired(false);
         setManuallyUpdatingArtifact(false);
@@ -152,7 +161,7 @@ export function TextRendererComponent(props: TextRendererProps) {
       setManuallyUpdatingArtifact(false);
       setUpdateRenderedArtifactRequired(false);
     }
-  }, [artifact, updateRenderedArtifactRequired]);
+  }, [artifact, updateRenderedArtifactRequired, props.activeFileIndex]);
 
   useEffect(() => {
     if (isRawView) {
@@ -201,6 +210,23 @@ export function TextRendererComponent(props: TextRendererProps) {
           ...prev,
           contents: prev.contents.map((c) => {
             if (c.index === prev.currentIndex) {
+              const currentContent = c as ArtifactMarkdownV3;
+              const isMultiFile =
+                !!currentContent.files && currentContent.files.length > 0;
+              if (isMultiFile) {
+                const clampedIndex = Math.min(
+                  props.activeFileIndex,
+                  currentContent.files!.length - 1
+                );
+                const updatedFiles = currentContent.files!.map((f, i) =>
+                  i === clampedIndex ? { ...f, content: fullMarkdown } : f
+                );
+                return {
+                  ...c,
+                  fullMarkdown: fullMarkdown,
+                  files: updatedFiles,
+                };
+              }
               return {
                 ...c,
                 fullMarkdown: fullMarkdown,

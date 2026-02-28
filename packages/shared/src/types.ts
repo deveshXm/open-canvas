@@ -54,6 +54,7 @@ export interface ArtifactToolResponse {
   title?: string;
   language?: string;
   type?: string;
+  files?: { name: string; content: string; language?: string }[];
 }
 
 export type RewriteArtifactMetaToolResponse =
@@ -103,11 +104,18 @@ export interface CodeHighlight {
   endCharIndex: number;
 }
 
+export interface ArtifactFileEntry {
+  name: string;
+  content: string;
+  language?: ProgrammingLanguageOptions;
+}
+
 export interface ArtifactMarkdownV3 {
   index: number;
   type: "text";
   title: string;
   fullMarkdown: string;
+  files?: ArtifactFileEntry[];
 }
 
 export interface ArtifactCodeV3 {
@@ -116,6 +124,7 @@ export interface ArtifactCodeV3 {
   title: string;
   language: ProgrammingLanguageOptions;
   code: string;
+  files?: ArtifactFileEntry[];
 }
 
 export interface ArtifactV3 {
@@ -223,6 +232,7 @@ export interface GraphInput {
   portLanguage?: ProgrammingLanguageOptions;
   fixBugs?: boolean;
   customQuickActionId?: string;
+  activeFileIndex?: number;
 
   webSearchEnabled?: boolean;
   webSearchResults?: SearchResult[];

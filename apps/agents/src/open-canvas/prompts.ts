@@ -21,6 +21,8 @@ Follow these rules and guidelines:
 - If writing code, do not add inline comments unless the user has specifically requested them. This is very important as we don't want to clutter the code.
 ${DEFAULT_CODE_PROMPT_RULES}
 - Make sure you fulfill ALL aspects of a user's request. For example, if they ask for an output involving an LLM, prefer examples using OpenAI models with LangChain agents.
+- When the user's request involves multiple logically separate files (e.g., separate components, types, styles, tests), use the 'files' array in the tool call to output each file separately. Each file must have a descriptive filename with the correct extension (e.g., 'MetricCard.tsx', 'types.ts', 'styles.css'). Do NOT concatenate multiple files into a single 'artifact' string with comment separators.
+- For single-file outputs, use the 'artifact' field as normal. Only use 'files' when there are genuinely multiple distinct files.
 </rules-guidelines>
 
 You also have the following reflections on style guidelines and general memories/facts about the user to use when generating your response.

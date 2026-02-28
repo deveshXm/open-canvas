@@ -1,6 +1,7 @@
 import {
   Artifact,
   ArtifactCodeV3,
+  ArtifactFileEntry,
   ArtifactMarkdownV3,
   ArtifactV3,
 } from "../types.js";
@@ -51,4 +52,25 @@ export const getArtifactContent = (
     return artifact.contents[artifact.contents.length - 1];
   }
   return currentContent;
+};
+
+export const isMultiFileArtifact = (
+  content: ArtifactCodeV3 | ArtifactMarkdownV3
+): boolean => {
+  return !!content.files && content.files.length > 0;
+};
+
+export const getFileCount = (
+  content: ArtifactCodeV3 | ArtifactMarkdownV3
+): number => {
+  return content.files?.length ?? 1;
+};
+
+export const getActiveFile = (
+  content: ArtifactCodeV3 | ArtifactMarkdownV3,
+  activeFileIndex: number
+): ArtifactFileEntry | undefined => {
+  if (!content.files || content.files.length === 0) return undefined;
+  const clampedIndex = Math.min(activeFileIndex, content.files.length - 1);
+  return content.files[clampedIndex];
 };

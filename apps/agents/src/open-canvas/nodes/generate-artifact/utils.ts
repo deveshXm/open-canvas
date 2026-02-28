@@ -1,6 +1,7 @@
 import { NEW_ARTIFACT_PROMPT } from "../../prompts.js";
 import {
   ArtifactCodeV3,
+  ArtifactFileEntry,
   ArtifactMarkdownV3,
   ProgrammingLanguageOptions,
 } from "@opencanvas/shared/types";
@@ -23,14 +24,21 @@ export const createArtifactContent = (
   toolCall: z.infer<typeof ARTIFACT_TOOL_SCHEMA>
 ): ArtifactCodeV3 | ArtifactMarkdownV3 => {
   const artifactType = toolCall?.type;
+  const files: ArtifactFileEntry[] | undefined = toolCall?.files?.map((f) => ({
+    name: f.name,
+    content: f.content,
+    language: f.language as ProgrammingLanguageOptions | undefined,
+  }));
+  const hasFiles = files && files.length > 0;
 
   if (artifactType === "code") {
     return {
       index: 1,
       type: "code",
       title: toolCall?.title,
-      code: toolCall?.artifact,
+      code: hasFiles ? files[0].content : toolCall?.artifact,
       language: toolCall?.language as ProgrammingLanguageOptions,
+      ...(hasFiles && { files }),
     };
   }
 
@@ -38,6 +46,7 @@ export const createArtifactContent = (
     index: 1,
     type: "text",
     title: toolCall?.title,
-    fullMarkdown: toolCall?.artifact,
+    fullMarkdown: hasFiles ? files[0].content : toolCall?.artifact,
+    ...(hasFiles && { files }),
   };
 };

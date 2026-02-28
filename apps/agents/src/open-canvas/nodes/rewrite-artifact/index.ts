@@ -80,6 +80,8 @@ export const rewriteArtifact = async (
     artifactContentText = response;
   }
 
+  // TODO: Multi-file rewrite support - currently rewrites produce single-file output.
+  // A future enhancement would use structured output to preserve multi-file structure.
   const newArtifactContent = createNewArtifactContent({
     artifactType,
     state,

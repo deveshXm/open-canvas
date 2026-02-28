@@ -23,6 +23,7 @@ export interface CodeToolbarProps {
   streamMessage: (params: GraphInput) => Promise<void>;
   isTextSelected: boolean;
   language: ProgrammingLanguageOptions;
+  activeFileIndex: number;
 }
 
 const toolbarOptions: ToolbarOption[] = [
@@ -100,14 +101,17 @@ export function CodeToolBar(props: CodeToolbarProps) {
     if (optionId === "addComments") {
       await streamMessage({
         addComments: true,
+        activeFileIndex: props.activeFileIndex,
       });
     } else if (optionId === "addLogs") {
       await streamMessage({
         addLogs: true,
+        activeFileIndex: props.activeFileIndex,
       });
     } else if (optionId === "fixBugs") {
       await streamMessage({
         fixBugs: true,
+        activeFileIndex: props.activeFileIndex,
       });
     }
   };
