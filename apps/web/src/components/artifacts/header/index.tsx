@@ -1,7 +1,12 @@
 import { ReflectionsDialog } from "../../reflections-dialog/ReflectionsDialog";
+import { ShareDialog } from "../ShareDialog";
 import { ArtifactTitle } from "./artifact-title";
 import { NavigateArtifactHistory } from "./navigate-artifact-history";
-import { ArtifactCodeV3, ArtifactMarkdownV3 } from "@opencanvas/shared/types";
+import {
+  ArtifactCodeV3,
+  ArtifactMarkdownV3,
+  ArtifactV3,
+} from "@opencanvas/shared/types";
 import { Assistant } from "@langchain/langgraph-sdk";
 import { PanelRightClose } from "lucide-react";
 import { TooltipIconButton } from "@/components/ui/assistant-ui/tooltip-icon-button";
@@ -17,6 +22,8 @@ interface ArtifactHeaderProps {
   artifactUpdateFailed: boolean;
   chatCollapsed: boolean;
   setChatCollapsed: (c: boolean) => void;
+  artifact?: ArtifactV3;
+  threadId?: string | null;
 }
 
 export function ArtifactHeader(props: ArtifactHeaderProps) {
@@ -48,6 +55,12 @@ export function ArtifactHeader(props: ArtifactHeaderProps) {
           currentArtifactIndex={props.currentArtifactContent.index}
           totalArtifactVersions={props.totalArtifactVersions}
         />
+        {props.artifact && props.threadId && (
+          <ShareDialog
+            artifact={props.artifact}
+            threadId={props.threadId}
+          />
+        )}
         <ReflectionsDialog selectedAssistant={props.selectedAssistant} />
       </div>
     </div>
