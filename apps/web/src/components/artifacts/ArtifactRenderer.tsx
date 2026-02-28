@@ -17,6 +17,7 @@ import { getArtifactContent } from "@opencanvas/shared/utils/artifacts";
 import { ArtifactLoading } from "./ArtifactLoading";
 import { AskOpenCanvas } from "./components/AskOpenCanvas";
 import { useGraphContext } from "@/contexts/GraphContext";
+import { useThreadContext } from "@/contexts/ThreadProvider";
 import { ArtifactHeader } from "./header";
 import { useUserContext } from "@/contexts/UserContext";
 import { useAssistantContext } from "@/contexts/AssistantContext";
@@ -38,6 +39,7 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
   const { graphData } = useGraphContext();
   const { selectedAssistant } = useAssistantContext();
   const { user } = useUserContext();
+  const { threadId } = useThreadContext();
   const {
     artifact,
     selectedBlocks,
@@ -318,6 +320,8 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
         artifactUpdateFailed={artifactUpdateFailed}
         chatCollapsed={props.chatCollapsed}
         setChatCollapsed={props.setChatCollapsed}
+        artifact={artifact}
+        threadId={threadId}
       />
       <div
         ref={contentRef}

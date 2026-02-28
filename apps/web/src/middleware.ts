@@ -3,11 +3,17 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname !== "/") {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Allow root, share pages, auth pages, and API routes
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/share/") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/")
+  ) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  return NextResponse.redirect(new URL("/", request.url));
 }
 
 export const config = {

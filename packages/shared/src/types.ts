@@ -227,3 +227,31 @@ export interface GraphInput {
   webSearchEnabled?: boolean;
   webSearchResults?: SearchResult[];
 }
+
+export type ShareMode = "view" | "copy" | "suggest";
+
+export interface ShareRecord {
+  shareToken: string;
+  createdAt: string;
+  ownerId: string;
+  sourceThreadId: string;
+  artifactVersionIndex: number;
+  artifact: ArtifactCodeV3 | ArtifactMarkdownV3;
+  mode: ShareMode;
+}
+
+export type SuggestionStatus = "pending" | "accepted" | "rejected";
+export type SuggestionType = "edit" | "comment";
+
+export interface Suggestion {
+  id: string;
+  authorId: string;
+  createdAt: string;
+  status: SuggestionStatus;
+  type: SuggestionType;
+  startOffset: number;
+  endOffset: number;
+  originalText: string;
+  proposedText: string;
+  comment?: string;
+}
