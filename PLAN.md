@@ -20,13 +20,13 @@
 
 # Decisions made for the features
 
-## Artificat Sharing
+## Save Me From Brend
 
 - Inline suggestion UI - don't want to deal with rendering library errors
 - Don't focus on unecessary share expiry problems etc
 - Worked on view only and copy work and suggesting inline-changes is complex hence we only made it till creating APIs and not UI.
 
-## Multi Artifact Sharing
+## Studio Apartment Problem
 
 - No trade-offs - very straightforwared.
 - Focused on this feature first.
