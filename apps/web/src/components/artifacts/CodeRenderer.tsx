@@ -13,6 +13,7 @@ import { rust } from "@codemirror/lang-rust";
 import { xml } from "@codemirror/lang-xml";
 import { clojure } from "@nextjournal/lang-clojure";
 import { csharp } from "@replit/codemirror-lang-csharp";
+import { css } from "@codemirror/lang-css";
 import styles from "./CodeRenderer.module.css";
 import { cleanContent } from "@/lib/normalize_string";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import { useGraphContext } from "@/contexts/GraphContext";
 export interface CodeRendererProps {
   editorRef: MutableRefObject<EditorView | null>;
   isHovering: boolean;
+  activeFileIndex: number;
 }
 
 const getLanguageExtension = (language: string) => {
@@ -53,6 +55,8 @@ const getLanguageExtension = (language: string) => {
       return clojure();
     case "csharp":
       return csharp();
+    case "css":
+      return css();
     default:
       return [];
   }
@@ -66,6 +70,7 @@ export function CodeRendererComponent(props: Readonly<CodeRendererProps>) {
     updateRenderedArtifactRequired,
     firstTokenReceived,
     setArtifactContent,
+    setArtifact,
     setUpdateRenderedArtifactRequired,
   } = graphData;
 
@@ -80,9 +85,22 @@ export function CodeRendererComponent(props: Readonly<CodeRendererProps>) {
   }
 
   const artifactContent = getArtifactContent(artifact) as ArtifactCodeV3;
-  const extensions = [getLanguageExtension(artifactContent.language)];
 
-  if (!artifactContent.code) {
+  // Multi-file: use active file's content and language
+  const isMultiFile =
+    !!artifactContent.files && artifactContent.files.length > 0;
+  const activeFile = isMultiFile
+    ? artifactContent.files![
+        Math.min(props.activeFileIndex, artifactContent.files!.length - 1)
+      ]
+    : undefined;
+
+  const displayCode = activeFile ? activeFile.content : artifactContent.code;
+  const displayLanguage = activeFile?.language ?? artifactContent.language;
+
+  const extensions = [getLanguageExtension(displayLanguage)];
+
+  if (!displayCode) {
     return null;
   }
 
@@ -117,10 +135,34 @@ export function CodeRendererComponent(props: Readonly<CodeRendererProps>) {
           styles.codeMirrorCustom,
           isStreaming && !firstTokenReceived ? "pulse-code" : ""
         )}
-        value={cleanContent(artifactContent.code)}
+        value={cleanContent(displayCode)}
         height="800px"
         extensions={extensions}
-        onChange={(c) => setArtifactContent(artifactContent.index, c)}
+        onChange={(c) => {
+          if (isMultiFile && artifactContent.files) {
+            const clampedIndex = Math.min(
+              props.activeFileIndex,
+              artifactContent.files.length - 1
+            );
+            const updatedFiles = artifactContent.files.map((f, i) =>
+              i === clampedIndex ? { ...f, content: c } : f
+            );
+            setArtifact((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                contents: prev.contents.map((content) => {
+                  if (content.index === artifactContent.index) {
+                    return { ...content, code: c, files: updatedFiles };
+                  }
+                  return content;
+                }),
+              };
+            });
+          } else {
+            setArtifactContent(artifactContent.index, c);
+          }
+        }}
         onCreateEditor={(view) => {
           props.editorRef.current = view;
         }}

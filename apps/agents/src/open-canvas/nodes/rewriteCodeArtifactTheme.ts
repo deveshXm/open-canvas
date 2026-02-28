@@ -8,7 +8,12 @@ import {
   isArtifactCodeContent,
   getArtifactContent,
 } from "@opencanvas/shared/utils/artifacts";
-import { ArtifactCodeV3, ArtifactV3 } from "@opencanvas/shared/types";
+import {
+  ArtifactCodeV3,
+  ArtifactFileEntry,
+  ArtifactV3,
+  ProgrammingLanguageOptions,
+} from "@opencanvas/shared/types";
 import { getModelConfig, getModelFromConfig } from "../../utils.js";
 import {
   ADD_COMMENTS_TO_CODE_ARTIFACT_PROMPT,
@@ -38,6 +43,20 @@ export const rewriteCodeArtifactTheme = async (
   if (!isArtifactCodeContent(currentArtifactContent)) {
     throw new Error("Current artifact content is not code");
   }
+
+  // Multi-file: use active file's code for quick actions
+  const isMultiFile =
+    !!currentArtifactContent.files && currentArtifactContent.files.length > 0;
+  const activeFileIdx = state.activeFileIndex ?? 0;
+  const clampedFileIdx = isMultiFile
+    ? Math.min(activeFileIdx, currentArtifactContent.files!.length - 1)
+    : 0;
+  const activeFile = isMultiFile
+    ? currentArtifactContent.files![clampedFileIdx]
+    : undefined;
+  const codeForPrompt = activeFile
+    ? activeFile.content
+    : currentArtifactContent.code;
 
   let formattedPrompt = "";
   if (state.addComments) {
@@ -83,10 +102,7 @@ export const rewriteCodeArtifactTheme = async (
   }
 
   // Insert the code into the artifact placeholder in the prompt
-  formattedPrompt = formattedPrompt.replace(
-    "{artifactContent}",
-    currentArtifactContent.code
-  );
+  formattedPrompt = formattedPrompt.replace("{artifactContent}", codeForPrompt);
 
   const newArtifactValues = await smallModel.invoke([
     { role: "user", content: formattedPrompt },
@@ -105,13 +121,29 @@ export const rewriteCodeArtifactTheme = async (
     artifactContentText = response;
   }
 
+  // For multi-file, update only the active file and preserve others
+  let newFiles: ArtifactFileEntry[] | undefined;
+  if (isMultiFile && currentArtifactContent.files) {
+    newFiles = currentArtifactContent.files.map((f, i) =>
+      i === clampedFileIdx
+        ? {
+            ...f,
+            content: artifactContentText,
+            language: state.portLanguage
+              ? (state.portLanguage as ProgrammingLanguageOptions)
+              : f.language,
+          }
+        : f
+    );
+  }
+
   const newArtifactContent: ArtifactCodeV3 = {
     index: state.artifact.contents.length + 1,
     type: "code",
     title: currentArtifactContent.title,
-    // Ensure the new artifact's language is updated, if necessary
     language: state.portLanguage || currentArtifactContent.language,
-    code: artifactContentText,
+    code: isMultiFile ? newFiles![clampedFileIdx].content : artifactContentText,
+    ...(newFiles && { files: newFiles }),
   };
 
   const newArtifact: ArtifactV3 = {

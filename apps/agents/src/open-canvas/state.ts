@@ -126,6 +126,10 @@ export const OpenCanvasGraphAnnotation = Annotation.Root({
    */
   customQuickActionId: Annotation<string | undefined>,
   /**
+   * The index of the active file in a multi-file artifact.
+   */
+  activeFileIndex: Annotation<number | undefined>,
+  /**
    * Whether or not to search the web for additional context.
    */
   webSearchEnabled: Annotation<boolean | undefined>,

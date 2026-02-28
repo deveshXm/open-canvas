@@ -13,7 +13,11 @@ import { ActionsToolbar, CodeToolBar } from "./actions_toolbar";
 import { CodeRenderer } from "./CodeRenderer";
 import { TextRenderer } from "./TextRenderer";
 import { CustomQuickActions } from "./actions_toolbar/custom";
-import { getArtifactContent } from "@opencanvas/shared/utils/artifacts";
+import {
+  getArtifactContent,
+  isMultiFileArtifact,
+} from "@opencanvas/shared/utils/artifacts";
+import { FileTabBar } from "./FileTabBar";
 import { ArtifactLoading } from "./ArtifactLoading";
 import { AskOpenCanvas } from "./components/AskOpenCanvas";
 import { useGraphContext } from "@/contexts/GraphContext";
@@ -64,6 +68,23 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
   const [inputValue, setInputValue] = useState("");
   const [isHoveringOverArtifact, setIsHoveringOverArtifact] = useState(false);
   const [isValidSelectionOrigin, setIsValidSelectionOrigin] = useState(false);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
+
+  const currentArtifactContent = artifact
+    ? getArtifactContent(artifact)
+    : undefined;
+
+  // Clamp activeFileIndex when version changes or file count changes
+  useEffect(() => {
+    if (currentArtifactContent && isMultiFileArtifact(currentArtifactContent)) {
+      const fileCount = currentArtifactContent.files!.length;
+      if (activeFileIndex >= fileCount) {
+        setActiveFileIndex(Math.max(0, fileCount - 1));
+      }
+    } else {
+      setActiveFileIndex(0);
+    }
+  }, [artifact?.currentIndex]);
 
   const handleMouseUp = useCallback(() => {
     const selection = window.getSelection();
@@ -284,10 +305,6 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
     return () => document.removeEventListener("keydown", handleKeyPress);
   }, [isInputVisible, selectionBox, isSelectionActive]);
 
-  const currentArtifactContent = artifact
-    ? getArtifactContent(artifact)
-    : undefined;
-
   if (!artifact && isStreaming) {
     return <ArtifactLoading />;
   }
@@ -319,6 +336,14 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
         chatCollapsed={props.chatCollapsed}
         setChatCollapsed={props.setChatCollapsed}
       />
+      {currentArtifactContent &&
+        isMultiFileArtifact(currentArtifactContent) && (
+          <FileTabBar
+            files={currentArtifactContent.files!}
+            activeFileIndex={activeFileIndex}
+            onTabClick={setActiveFileIndex}
+          />
+        )}
       <div
         ref={contentRef}
         className={cn(
@@ -343,12 +368,14 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
                 isInputVisible={isInputVisible}
                 isEditing={props.isEditing}
                 isHovering={isHoveringOverArtifact}
+                activeFileIndex={activeFileIndex}
               />
             ) : null}
             {currentArtifactContent.type === "code" ? (
               <CodeRenderer
                 editorRef={editorRef}
                 isHovering={isHoveringOverArtifact}
+                activeFileIndex={activeFileIndex}
               />
             ) : null}
           </div>
@@ -392,6 +419,7 @@ function ArtifactRendererComponent(props: ArtifactRendererProps) {
           language={
             currentArtifactContent.language as ProgrammingLanguageOptions
           }
+          activeFileIndex={activeFileIndex}
         />
       ) : null}
     </div>

@@ -2,6 +2,7 @@ import { cleanContent } from "@/lib/normalize_string";
 import {
   Artifact,
   ArtifactCodeV3,
+  ArtifactFileEntry,
   ArtifactMarkdownV3,
   ArtifactToolResponse,
   ArtifactV3,
@@ -77,12 +78,23 @@ export const createNewGeneratedArtifactFromTool = (
     console.error("Received new artifact without type");
     return;
   }
+
+  const files: ArtifactFileEntry[] | undefined = artifactTool.files?.map(
+    (f) => ({
+      name: f.name,
+      content: f.content,
+      language: f.language as ProgrammingLanguageOptions | undefined,
+    })
+  );
+  const hasFiles = files && files.length > 0;
+
   if (artifactTool.type === "text") {
     return {
       index: 1,
       type: "text",
       title: artifactTool.title || "",
-      fullMarkdown: artifactTool.artifact || "",
+      fullMarkdown: hasFiles ? files[0].content : artifactTool.artifact || "",
+      ...(hasFiles && { files }),
     };
   } else {
     if (!artifactTool.language) {
@@ -92,8 +104,9 @@ export const createNewGeneratedArtifactFromTool = (
       index: 1,
       type: "code",
       title: artifactTool.title || "",
-      code: artifactTool.artifact || "",
+      code: hasFiles ? files[0].content : artifactTool.artifact || "",
       language: artifactTool.language as ProgrammingLanguageOptions,
+      ...(hasFiles && { files }),
     };
   }
 };
