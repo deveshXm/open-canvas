@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!process.env.LANGCHAIN_API_KEY) {
+    return new NextResponse(JSON.stringify({ sharedRunURL: "" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const lsClient = new Client({
     apiKey: process.env.LANGCHAIN_API_KEY,
   });
