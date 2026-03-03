@@ -217,7 +217,7 @@ export function ThreadHistoryComponent(props: ThreadHistoryProps) {
     }
     setIsSearching(true);
     try {
-      const res = await fetch("/api/threads/search", {
+      const res = await fetch("/api/thread-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
