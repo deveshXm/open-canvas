@@ -307,7 +307,12 @@ export function ThreadHistoryComponent(props: ThreadHistoryProps) {
             className="pl-8"
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              debouncedSearch(e.target.value);
+              if (!e.target.value.trim()) {
+                setSearchResults(null);
+                debouncedSearch.cancel();
+              } else {
+                debouncedSearch(e.target.value);
+              }
             }}
             value={searchQuery}
           />
