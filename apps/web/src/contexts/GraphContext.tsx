@@ -1275,7 +1275,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
                 args: { sharedRunURL },
                 id: sharedRunURL
                   ?.split("https://smith.langchain.com/public/")[1]
-                  .split("/")[0],
+                  ?.split("/")[0],
               };
               const castMsg = msg as AIMessage;
               const newMessageWithToolCall = new AIMessage({
