@@ -1,10 +1,10 @@
 import { isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import { TooltipIconButton } from "../ui/assistant-ui/tooltip-icon-button";
 import { Button } from "../ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "../ui/sheet";
 import { Skeleton } from "../ui/skeleton";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Thread } from "@langchain/langgraph-sdk";
 import { PiChatsCircleLight } from "react-icons/pi";
 import { TighterText } from "../ui/header";
@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { useUserContext } from "@/contexts/UserContext";
 import { useThreadContext } from "@/contexts/ThreadProvider";
+import { Input } from "../ui/input";
+import debounce from "lodash/debounce";
 
 interface ThreadHistoryProps {
   switchSelectedThreadCallback: (thread: Thread) => void;
@@ -203,6 +205,43 @@ export function ThreadHistoryComponent(props: ThreadHistoryProps) {
     useThreadContext();
   const { user } = useUserContext();
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Thread[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const res = await fetch("/api/threads/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      setSearchResults(data.threads ?? []);
+    } catch (e) {
+      console.error("Search failed", e);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const debouncedSearch = useMemo(
+    () => debounce((value: string) => performSearch(value), 300),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (typeof window == "undefined" || userThreads.length || !user) return;
@@ -224,8 +263,10 @@ export function ThreadHistoryComponent(props: ThreadHistoryProps) {
     await deleteThread(id, () => setMessages([]));
   };
 
+  const threadsToDisplay = searchResults !== null ? searchResults : userThreads;
+
   const groupedThreads = groupThreads(
-    userThreads,
+    threadsToDisplay,
     (thread) => {
       switchSelectedThread(thread);
       props.switchSelectedThreadCallback(thread);
@@ -259,13 +300,34 @@ export function ThreadHistoryComponent(props: ThreadHistoryProps) {
           </TighterText>
         </SheetTitle>
 
-        {isUserThreadsLoading && !userThreads.length ? (
+        <div className="relative px-2 pt-2">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <Input
+            placeholder="Search threads..."
+            className="pl-8"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              debouncedSearch(e.target.value);
+            }}
+            value={searchQuery}
+          />
+        </div>
+
+        {isSearching ? (
+          <div className="flex flex-col gap-1 px-2 pt-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <LoadingThread key={`search-loading-${i}`} />
+            ))}
+          </div>
+        ) : isUserThreadsLoading && !userThreads.length ? (
           <div className="flex flex-col gap-1 px-2 pt-3">
             {Array.from({ length: 25 }).map((_, i) => (
               <LoadingThread key={`loading-thread-${i}`} />
             ))}
           </div>
-        ) : !userThreads.length ? (
+        ) : searchResults !== null && searchResults.length === 0 ? (
+          <p className="px-3 pt-3 text-gray-500">No threads found.</p>
+        ) : !threadsToDisplay.length ? (
           <p className="px-3 text-gray-500">No items found in history.</p>
         ) : (
           <ThreadsList groupedThreads={groupedThreads} />
